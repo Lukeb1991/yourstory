@@ -644,6 +644,18 @@ span.candle{ cursor:default; }
   100%{ transform:translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(1) rotate(var(--rot)); opacity:0; }
 }
 
+/* shorter phones: tighten the game screens so board and keyboard fit on one screen */
+@media (max-height: 780px){
+  .g-top{ min-height:34px; margin-bottom:0; }
+  .g-chapter{ font-size:13px; }
+  .g-title{ font-size:clamp(25px, 7.4vw, 31px); }
+  .g-how{ margin:2px 0 10px; font-size:13px; }
+  .game-sheet{ padding:12px 12px 14px; }
+  .hint{ font-size:17px; margin-bottom:10px; }
+  .kb{ margin-top:12px; gap:6px; }
+  .key{ height:44px; }
+  .xw-clue{ margin-top:12px; min-height:54px; }
+}
 @media (prefers-reduced-motion: reduce){
   *, *::before, *::after{ animation-duration:.01ms !important; animation-delay:0s !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; transition-delay:0s !important; }
   .confetto, .spark, .sky{ display:none; }
@@ -1367,6 +1379,36 @@ function renderChapter(i){
   else game.appendChild(make('p', 'g-how', 'This chapter type isn’t recognised. Use wordle, connections or crossword.'));
 }
 
+
+/* ---------------- fitting a board on screen ----------------
+   Sizes the board once so it and the keyboard fit on one screen, then only
+   again if the width changes (e.g. the phone is turned). Phone browsers change
+   the height as their address bar hides and shows, and resizing on that made
+   the board jump about mid-game. */
+function fitBoard(o){
+  let lastWidth = 0;
+  function fit(force){
+    const w = window.innerWidth;
+    if(!force && Math.abs(w - lastWidth) < 2) return;
+    lastWidth = w;
+    const cs = getComputedStyle(o.sheet);
+    const inner = o.sheet.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const byWidth = Math.floor((inner - (o.cols - 1) * o.gap) / o.cols);
+    o.apply(Math.max(o.min, Math.min(o.max, byWidth)));
+    const b = o.board.getBoundingClientRect();
+    const top = b.top + window.scrollY;
+    const below = o.kb.getBoundingClientRect().bottom - b.bottom + 12;
+    const byHeight = Math.floor((window.innerHeight - top - below - (o.rows - 1) * o.gap) / o.rows);
+    o.apply(Math.max(o.min, Math.min(o.max, byWidth, byHeight)));
+  }
+  fit(true);
+  setResize(() => fit(false));
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if(o.board.isConnected) fit(true); });
+  // very small screens: keep the board and keyboard in view rather than the heading
+  const over = o.kb.getBoundingClientRect().bottom + 8 - window.innerHeight;
+  if(over > 0) window.scrollTo(0, over);
+}
+
 /* ---------------- on-screen keyboard ---------------- */
 function buildKeyboard(withEnter, onKey){
   const wrap = make('div', 'kb');
@@ -1416,16 +1458,7 @@ function playWordle(root, ch, finish){
   const kb = buildKeyboard(true, handle);
   root.append(sheet, kb.el);
 
-  function size(){
-    const byWidth = Math.floor((sheet.clientWidth - 32 - (LEN - 1) * 6) / LEN);
-    const top = board.getBoundingClientRect().top + window.scrollY;
-    const below = 22 + 18 + kb.el.offsetHeight + 16;
-    const byHeight = Math.floor((window.innerHeight - top - below - (ROWS - 1) * 6) / ROWS);
-    const t = Math.max(34, Math.min(58, byWidth, byHeight));
-    board.style.setProperty('--tile', t + 'px');
-  }
-  size();
-  setResize(size);
+  fitBoard({ sheet, board, kb:kb.el, cols:LEN, rows:ROWS, gap:6, min:28, max:58, apply:t => board.style.setProperty('--tile', t + 'px') });
 
   let guesses = 0, current = '', over = false, busy = false;
   const RANK = { absent:0, present:1, correct:2 };
@@ -1793,16 +1826,7 @@ function playCrossword(root, ch, finish){
   tools.append(checkBtn, revealBtn);
   root.append(sheet, kb.el, tools);
 
-  function size(){
-    const byWidth = Math.floor((sheet.clientWidth - 32 - (xw.C - 1) * 3) / xw.C);
-    const top = board.getBoundingClientRect().top + window.scrollY;
-    const below = clueBar.offsetHeight + 18 + 22 + kb.el.offsetHeight + 18 + 16;
-    const byHeight = Math.floor((window.innerHeight - top - below - (xw.R - 1) * 3) / xw.R);
-    const s = Math.max(24, Math.min(44, byWidth, byHeight));
-    board.style.setProperty('--cell', s + 'px');
-  }
-  size();
-  setResize(size);
+  fitBoard({ sheet, board, kb:kb.el, cols:xw.C, rows:xw.R, gap:3, min:22, max:44, apply:c => board.style.setProperty('--cell', c + 'px') });
 
   const letters = {};
   let entry = xw.entries[0], pos = entry.cells[0], over = false, nudged = false;
