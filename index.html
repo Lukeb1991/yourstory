@@ -595,8 +595,8 @@ span.candle{ cursor:default; }
 #lastLetter{ --tilt:.5deg; margin-top:18px; cursor:default; }
 .skip-hint{ margin:14px 0 0; text-align:center; font-size:13px; color:rgba(251,252,255,.55); transition:opacity .3s ease; }
 
-.present{ margin-top:46px; text-align:center; display:none; }
-.present.in{ display:block; animation:rise-in .7s ease both; }
+.reveal-card{ margin-top:46px; text-align:center; display:none; }
+.reveal-card.in{ display:block; animation:rise-in .7s ease both; }
 .present-kicker{ margin:0 0 16px; font-family:var(--display); font-size:28px; color:var(--card); }
 .scratch{
   position:relative; margin:0 auto; width:100%; max-width:340px; height:190px;
@@ -736,7 +736,7 @@ span.candle{ cursor:default; }
       </article>
       <p class="skip-hint" id="skipHint">Tap the letter to skip ahead</p>
 
-      <div class="present" id="present">
+      <div class="reveal-card" id="present">
         <p class="present-kicker">One more thing&hellip;</p>
         <div class="scratch" id="scratch">
           <div class="prize">
